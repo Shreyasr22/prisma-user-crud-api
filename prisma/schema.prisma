@@ -1,17 +1,55 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+generator client {
+  provider = "prisma-client-js"
 }
 
+model Department {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  professors Professor[]
+  courses    Course[]
+  students   Student[]
+}
 
+model Professor {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  courses      Course[]
+}
+
+model Course {
+  id           Int          @id @default(autoincrement())
+  title        String
+  code         String       @unique
+  departmentId Int
+  department   Department   @relation(fields: [departmentId], references: [id])
+  professorId  Int
+  professor    Professor    @relation(fields: [professorId], references: [id])
+  enrollments  Enrollment[]
+}
+
+model Student {
+  id           Int          @id @default(autoincrement())
+  name         String
+  email        String       @unique
+  departmentId Int
+  department   Department   @relation(fields: [departmentId], references: [id])
+  enrollments  Enrollment[]
+}
+
+model Enrollment {
+  id        Int     @id @default(autoincrement())
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade) // MANDATORY CASCADE: If student is deleted, clean up their enrollment
+  courseId  Int
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade) // MANDATORY CASCADE: If course is deleted, clean up its enrollments
+
+  @@unique([studentId, courseId]) // Prevents duplicate enrollments for the same course
+}
